@@ -1,0 +1,60 @@
+{
+  "name": "RescheduleAppointment",
+  "displayName": "Reschedule Appointment",
+  "priority": 500000,
+  "isFallback": false,
+  "webhookState": "WEBHOOK_STATE_ENABLED",
+  "trainingPhrases": [
+    { "type": "EXAMPLE", "parts": [{ "text": "I want to reschedule my appointment" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Can I move my booking to a different time?" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Change my appointment to next Monday" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Reschedule me for Friday" }] }
+  ],
+  "parameters": [
+    {
+      "name": "customerName",
+      "displayName": "customerName",
+      "value": "$customerName",
+      "entityTypeDisplayName": "@sys.any",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What name is the existing appointment under?"],
+        "hi": ["मौजूदा अपॉइंटमेंट किस नाम पर है?"],
+        "kn": ["ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಾರ ಹೆಸರಿನಲ್ಲಿದೆ?"],
+        "ta": ["ஏற்கனவே உள்ள சந்திப்பு எந்தப் பெயரில் உள்ளது?"]
+      }
+    },
+    {
+      "name": "newDate",
+      "displayName": "newDate",
+      "value": "$newDate",
+      "entityTypeDisplayName": "@sys.date",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What is the new date?"],
+        "hi": ["नई तारीख क्या है?"],
+        "kn": ["ಹೊಸ ದಿನಾಂಕ ಏನು?"],
+        "ta": ["புதிய தேதி என்ன?"]
+      }
+    },
+    {
+      "name": "newTime",
+      "displayName": "newTime",
+      "value": "$newTime",
+      "entityTypeDisplayName": "@sys.time",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What is the new time?"],
+        "hi": ["नया समय क्या है?"],
+        "kn": ["ಹೊಸ ಸಮಯ ಏನು?"],
+        "ta": ["புதிய நேரம் என்ன?"]
+      }
+    }
+  ],
+  "messages": [
+    { "lang": "en", "speech": ["Rescheduling your appointment now."] },
+    { "lang": "hi", "speech": ["आपका अपॉइंटमेंट पुनर्निर्धारित किया जा रहा है।"] },
+    { "lang": "kn", "speech": ["ನಿಮ್ಮ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಮರು-ನಿರ್ಧರಿಸಲಾಗುತ್ತಿದೆ."] },
+    { "lang": "ta", "speech": ["உங்கள் சந்திப்பு மறு-திட்டமிடப்படுகிறது."] }
+  ]
+}

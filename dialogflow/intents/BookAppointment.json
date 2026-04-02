@@ -1,0 +1,86 @@
+{
+  "name": "BookAppointment",
+  "displayName": "Book Appointment",
+  "priority": 500000,
+  "isFallback": false,
+  "webhookState": "WEBHOOK_STATE_ENABLED",
+  "trainingPhrases": [
+    { "type": "EXAMPLE", "parts": [{ "text": "I want to book an appointment" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Schedule an appointment for me" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Can I book a slot on Friday at 3pm" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Set up a meeting" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Book me in for tomorrow" }] }
+  ],
+  "parameters": [
+    {
+      "name": "customerName",
+      "displayName": "customerName",
+      "value": "$customerName",
+      "entityTypeDisplayName": "@sys.any",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What is your name?"],
+        "hi": ["आपका नाम क्या है?"],
+        "kn": ["ನಿಮ್ಮ ಹೆಸರೇನು?"],
+        "ta": ["உங்கள் பெயர் என்ன?"]
+      }
+    },
+    {
+      "name": "phone",
+      "displayName": "phone",
+      "value": "$phone",
+      "entityTypeDisplayName": "@sys.phone-number",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What is your phone number?"],
+        "hi": ["आपका फ़ोन नंबर क्या है?"],
+        "kn": ["ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್ ಏನು?"],
+        "ta": ["உங்கள் தொலைபேசி எண் என்ன?"]
+      }
+    },
+    {
+      "name": "date",
+      "displayName": "date",
+      "value": "$date",
+      "entityTypeDisplayName": "@sys.date",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What date would you like?"],
+        "hi": ["आप कौन सी तारीख चाहते हैं?"],
+        "kn": ["ನೀವು ಯಾವ ದಿನಾಂಕ ಬಯಸುತ್ತೀರಿ?"],
+        "ta": ["நீங்கள் எந்த தேதி விரும்புகிறீர்கள்?"]
+      }
+    },
+    {
+      "name": "time",
+      "displayName": "time",
+      "value": "$time",
+      "entityTypeDisplayName": "@sys.time",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What time works for you?"],
+        "hi": ["आपके लिए कौन सा समय ठीक रहेगा?"],
+        "kn": ["ನಿಮಗೆ ಯಾವ ಸಮಯ ಸರಿ?"],
+        "ta": ["உங்களுக்கு எந்த நேரம் பொருந்தும்?"]
+      }
+    }
+  ],
+  "messages": [
+    {
+      "lang": "en",
+      "speech": ["Your appointment is being booked. Please wait."]
+    },
+    {
+      "lang": "hi",
+      "speech": ["आपका अपॉइंटमेंट बुक किया जा रहा है। कृपया प्रतीक्षा करें।"]
+    },
+    {
+      "lang": "kn",
+      "speech": ["ನಿಮ್ಮ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಬುಕ್ ಮಾಡಲಾಗುತ್ತಿದೆ. ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ."]
+    },
+    {
+      "lang": "ta",
+      "speech": ["உங்கள் சந்திப்பு பதிவு செய்யப்படுகிறது. தயவுசெய்து காத்திருங்கள்."]
+    }
+  ]
+}

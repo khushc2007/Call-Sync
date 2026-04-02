@@ -1,0 +1,34 @@
+{
+  "name": "CancelAppointment",
+  "displayName": "Cancel Appointment",
+  "priority": 500000,
+  "isFallback": false,
+  "webhookState": "WEBHOOK_STATE_ENABLED",
+  "trainingPhrases": [
+    { "type": "EXAMPLE", "parts": [{ "text": "Cancel my appointment" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "I need to cancel my booking" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "Please remove my appointment" }] },
+    { "type": "EXAMPLE", "parts": [{ "text": "I don't need the appointment anymore" }] }
+  ],
+  "parameters": [
+    {
+      "name": "customerName",
+      "displayName": "customerName",
+      "value": "$customerName",
+      "entityTypeDisplayName": "@sys.any",
+      "mandatory": true,
+      "prompts": {
+        "en": ["What name is the appointment under?"],
+        "hi": ["अपॉइंटमेंट किस नाम पर है?"],
+        "kn": ["ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ಯಾರ ಹೆಸರಿನಲ್ಲಿದೆ?"],
+        "ta": ["சந்திப்பு எந்தப் பெயரில் உள்ளது?"]
+      }
+    }
+  ],
+  "messages": [
+    { "lang": "en", "speech": ["Cancelling your appointment."] },
+    { "lang": "hi", "speech": ["आपका अपॉइंटमेंट रद्द किया जा रहा है।"] },
+    { "lang": "kn", "speech": ["ನಿಮ್ಮ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ರದ್ದುಗೊಳಿಸಲಾಗುತ್ತಿದೆ."] },
+    { "lang": "ta", "speech": ["உங்கள் சந்திப்பு ரத்து செய்யப்படுகிறது."] }
+  ]
+}

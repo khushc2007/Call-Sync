@@ -1,0 +1,107 @@
+{
+  "_comment": "VAPI Assistant Configuration for CallSync AI. Import this via the VAPI dashboard or REST API.",
+  "name": "CallSync Assistant",
+  "firstMessage": "Hello! Welcome to CallSync. I can help you book, reschedule, or cancel an appointment. How can I help you today?",
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4",
+    "temperature": 0.3,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a professional appointment scheduling assistant for CallSync. Your job is to help callers book, reschedule, or cancel appointments. Always confirm the customer's name, phone number, preferred date, and time before taking action. Be concise, polite, and efficient. If a slot is unavailable, suggest they try another time. After completing an action, thank the caller and say goodbye."
+      }
+    ]
+  },
+  "voice": {
+    "provider": "playht",
+    "voiceId": "jennifer"
+  },
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "bookAppointment",
+        "description": "Books a new appointment for the customer in Google Calendar and saves it to the database.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customerName": {
+              "type": "string",
+              "description": "Full name of the customer"
+            },
+            "phone": {
+              "type": "string",
+              "description": "Customer's phone number including country code"
+            },
+            "date": {
+              "type": "string",
+              "description": "Appointment date in YYYY-MM-DD format"
+            },
+            "time": {
+              "type": "string",
+              "description": "Appointment time in HH:MM 24-hour format"
+            }
+          },
+          "required": ["customerName", "phone", "date", "time"]
+        }
+      },
+      "server": {
+        "url": "https://callsyncbackend.onrender.com/vapi/tool"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "rescheduleAppointment",
+        "description": "Reschedules an existing appointment to a new date and time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customerName": {
+              "type": "string",
+              "description": "Name the original appointment was booked under"
+            },
+            "newDate": {
+              "type": "string",
+              "description": "New appointment date in YYYY-MM-DD format"
+            },
+            "newTime": {
+              "type": "string",
+              "description": "New appointment time in HH:MM 24-hour format"
+            }
+          },
+          "required": ["customerName", "newDate", "newTime"]
+        }
+      },
+      "server": {
+        "url": "https://callsyncbackend.onrender.com/vapi/tool"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cancelAppointment",
+        "description": "Cancels an existing appointment and removes it from Google Calendar.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customerName": {
+              "type": "string",
+              "description": "Name the appointment was booked under"
+            }
+          },
+          "required": ["customerName"]
+        }
+      },
+      "server": {
+        "url": "https://callsyncbackend.onrender.com/vapi/tool"
+      }
+    }
+  ],
+  "endCallFunctionEnabled": true,
+  "endCallMessage": "Thank you for calling CallSync. Have a great day!",
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 600,
+  "backgroundSound": "off"
+}

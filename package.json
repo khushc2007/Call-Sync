@@ -1,0 +1,17 @@
+{
+  "name": "callsync-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CallSync AI - Voice-based appointment manager. Monorepo containing frontend, backend, Dialogflow intents, and VAPI configuration.",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && node server.js",
+    "install:frontend": "cd frontend && npm install --legacy-peer-deps",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:frontend && npm run install:backend"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+}
