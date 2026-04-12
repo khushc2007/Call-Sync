@@ -14,7 +14,6 @@
 
 A patient calls a phone number. An AI voice agent named Riley answers, collects their details, checks the calendar, books the appointment, and hangs up — in under 90 seconds. The clinic dashboard updates in real time.
 
-Built for the **HACK'A'WAR GenAI × AWS Hackathon** · Track 3.3 — Voice AI · RIT Bengaluru
 
 <br />
 
