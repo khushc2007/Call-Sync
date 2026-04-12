@@ -1,190 +1,120 @@
 "use client"
 
-import { Bell, Send, Clock, AlertCircle, Check, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Bell, Check, X, Clock, AlertCircle, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { mockAppointmentsWithReminders, getRemindersNext24Hours, type ReminderStatus } from "@/lib/mock-data"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useAppointments } from "@/hooks/use-appointments"
 import { cn } from "@/lib/utils"
+import type { AppointmentRow } from "@/lib/supabase"
 
-function ReminderStatusBadge({ status }: { status: ReminderStatus }) {
-  const config = {
-    scheduled: { 
-      label: "Scheduled", 
-      className: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      icon: Clock
-    },
-    sent: { 
-      label: "Sent", 
-      className: "bg-green-500/20 text-green-400 border-green-500/30",
-      icon: Check
-    },
-    failed: { 
-      label: "Failed", 
-      className: "bg-red-500/20 text-red-400 border-red-500/30",
-      icon: X
-    },
-    not_required: { 
-      label: "Not Required", 
-      className: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-      icon: AlertCircle
-    },
+function SectionCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("bg-[#1a1b23] rounded-[10px] border border-[#2a2b35] backdrop-blur-sm", className)}>
+      {children}
+    </div>
+  )
+}
+
+function ReminderRow({ apt }: { apt: AppointmentRow }) {
+  const statusConfig = {
+    sent: { label: "Reminded", className: "bg-teal/15 text-teal border-teal/30", icon: Check },
+    pending_reminder: { label: "Scheduled", className: "bg-amber/15 text-amber border-amber/30", icon: Clock },
+    not_needed: { label: "Not needed", className: "bg-[#2a2b35] text-muted-foreground border-[#2a2b35]", icon: AlertCircle },
   }
 
-  const Icon = config[status].icon
+  const state = apt.reminded ? "sent" : apt.status === "cancelled" ? "not_needed" : "pending_reminder"
+  const cfg = statusConfig[state]
+  const Icon = cfg.icon
 
   return (
-    <Badge variant="outline" className={cn("rounded-full font-normal border gap-1", config[status].className)}>
-      <Icon className="w-3 h-3" />
-      {config[status].label}
-    </Badge>
+    <div className="flex items-center gap-4 px-5 py-3.5 border-b border-[#2a2b35]/50 hover:bg-[#12131a] transition-colors">
+      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", cfg.className.split(" ").slice(0,2).join(" "))}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{apt.name}</p>
+        <p className="text-xs text-muted-foreground">{apt.phone} · {apt.date} at {apt.time}</p>
+      </div>
+      <Badge variant="outline" className={cn("text-[10px] rounded-[6px] border font-normal", cfg.className)}>
+        {cfg.label}
+      </Badge>
+    </div>
   )
 }
 
 export function RemindersPage() {
-  const remindersNext24Hours = getRemindersNext24Hours()
-  
-  // Sort appointments: scheduled first, then by date
-  const sortedAppointments = [...mockAppointmentsWithReminders].sort((a, b) => {
-    // Priority order: scheduled > sent > failed > not_required
-    const priority: Record<ReminderStatus, number> = { scheduled: 0, sent: 1, failed: 2, not_required: 3 }
-    const priorityDiff = priority[a.reminderStatus] - priority[b.reminderStatus]
-    if (priorityDiff !== 0) return priorityDiff
-    return 0 // Keep original order for same priority
+  const { appointments, loading, error } = useAppointments({ pollingInterval: 60_000 })
+
+  const remindedCount = appointments.filter(a => a.reminded).length
+  const scheduledCount = appointments.filter(a => !a.reminded && a.status !== "cancelled").length
+  const deliveryRate = appointments.length > 0 ? Math.round((remindedCount / (remindedCount + scheduledCount || 1)) * 100) : 0
+
+  const sorted = [...appointments].sort((a, b) => {
+    if (a.reminded !== b.reminded) return a.reminded ? 1 : -1
+    return a.date.localeCompare(b.date)
   })
 
   return (
     <div className="space-y-6">
-      {/* Stats Card */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center">
-              <Bell className="w-7 h-7 text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-white">{remindersNext24Hours}</p>
-              <p className="text-sm text-white/60">Reminders scheduled for next 24 hours</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-2xl font-bold text-green-400">92%</p>
-              <p className="text-sm text-white/40">Delivery rate</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-white">{mockAppointmentsWithReminders.filter(a => a.reminderStatus === "sent").length}</p>
-              <p className="text-sm text-white/40">Sent today</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Scheduled", value: scheduledCount, sub: "next 24 hours", icon: Clock, color: "text-amber" },
+          { label: "Sent", value: remindedCount, sub: "all time", icon: Check, color: "text-teal" },
+          { label: "Delivery rate", value: `${deliveryRate}%`, sub: "success", icon: Bell, color: "text-coral" },
+          { label: "Total tracked", value: appointments.length, sub: "appointments", icon: AlertCircle, color: "text-muted-foreground" },
+        ].map(({ label, value, sub, icon: Icon, color }) => (
+          <SectionCard key={label} className="p-5">
+            {loading ? (
+              <><Skeleton className="h-8 w-16 mb-2" /><Skeleton className="h-3 w-24" /></>
+            ) : (
+              <>
+                <div className="flex items-start justify-between mb-3">
+                  <Icon className={cn("w-5 h-5", color)} />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{value}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>
+              </>
+            )}
+          </SectionCard>
+        ))}
       </div>
 
-      {/* Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-lg font-semibold text-white">Reminder Status</h3>
+      <SectionCard>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#2a2b35]">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-              {mockAppointmentsWithReminders.filter(a => a.reminderStatus === "scheduled").length} Pending
-            </Badge>
+            <h3 className="font-semibold text-foreground text-sm">Reminder log</h3>
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
           </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10 bg-white/5">
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Phone</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Appointment Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Reminder Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Sent At</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-white/40 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {sortedAppointments.map((apt) => (
-                <tr key={apt.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-white">{apt.patientName}</p>
-                      <p className="text-xs text-white/40">{apt.service}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white/70">{apt.phone}</td>
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="text-sm text-white/70">
-                        {new Date(apt.date).toLocaleDateString('en-IN', { 
-                          weekday: 'short',
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                      <p className="text-xs text-white/40">{apt.time}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <ReminderStatusBadge status={apt.reminderStatus} />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white/50">
-                    {apt.reminderSentAt || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {apt.reminderStatus === "scheduled" && (
-                      <Button
-                        size="sm"
-                        className="bg-red-500 hover:bg-red-600 text-white rounded-full h-8 px-3 text-xs"
-                      >
-                        <Send className="w-3 h-3 mr-1" />
-                        Send Now
-                      </Button>
-                    )}
-                    {apt.reminderStatus === "failed" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-full h-8 px-3 text-xs"
-                      >
-                        <Send className="w-3 h-3 mr-1" />
-                        Retry
-                      </Button>
-                    )}
-                    {(apt.reminderStatus === "sent" || apt.reminderStatus === "not_required") && (
-                      <span className="text-white/30 text-xs">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Badge variant="outline" className="bg-amber/15 text-amber border-amber/30 text-xs rounded-[6px]">
+            {scheduledCount} pending
+          </Badge>
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
-          <p className="text-sm text-white/40">
-            Showing {sortedAppointments.length} appointments
-          </p>
-          <div className="flex items-center gap-6 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              <span className="text-white/50">Scheduled</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              <span className="text-white/50">Sent</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="text-white/50">Failed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-              <span className="text-white/50">Not Required</span>
-            </div>
+        {error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-coral">Failed to load reminders</p>
+            <p className="text-xs text-muted-foreground mt-1">{error}</p>
           </div>
-        </div>
-      </div>
+        ) : loading ? (
+          <div className="divide-y divide-[#2a2b35]/50">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <div className="flex-1"><Skeleton className="h-4 w-36 mb-1" /><Skeleton className="h-3 w-48" /></div>
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : sorted.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Bell className="w-10 h-10 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">No appointments to remind</p>
+          </div>
+        ) : (
+          <div>{sorted.map(apt => <ReminderRow key={apt.id} apt={apt} />)}</div>
+        )}
+      </SectionCard>
     </div>
   )
 }

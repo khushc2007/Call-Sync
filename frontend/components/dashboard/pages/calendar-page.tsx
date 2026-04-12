@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useAppointments } from "@/hooks/use-appointments"
 import {
   format,
   startOfWeek,
@@ -568,6 +569,43 @@ export function CalendarPage() {
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
   const [selectedAppt, setSelectedAppt] = useState<CalendarAppointment | null>(null)
 
+  const { appointments: liveApts } = useAppointments({ pollingInterval: 60_000 })
+
+  // Convert live Supabase appointments to CalendarAppointment shape
+  const liveCalendarApts = useMemo<CalendarAppointment[]>(() => {
+    return liveApts
+      .filter(a => a.date && a.time)
+      .map(a => {
+        const [hourStr, minStr] = a.time.split(":")
+        const hour = parseInt(hourStr, 10)
+        const minute = parseInt(minStr || "0", 10)
+        // Parse date — Supabase returns ISO date string
+        const [y, m, d] = a.date.split("-").map(Number)
+        return {
+          id: a.id,
+          patientName: a.name,
+          phone: a.phone,
+          doctor: a.doctor ?? "—",
+          specialty: a.condition ?? "General",
+          date: new Date(y, m - 1, d),
+          hour: isNaN(hour) ? 9 : hour,
+          minute: isNaN(minute) ? 0 : minute,
+          durationMins: 30,
+          status: a.status as ApptStatus,
+          notes: a.reminded ? "Reminder sent." : "No notes.",
+        }
+      })
+  }, [liveApts])
+
+  // Merge: live data overrides generated data by id
+  const mergedAppointments = useMemo(() => {
+    const liveIds = new Set(liveCalendarApts.map(a => a.id))
+    const generated = ALL_APPOINTMENTS.filter(a => !liveIds.has(a.id))
+    return liveCalendarApts.length > 0
+      ? [...liveCalendarApts, ...generated.slice(0, Math.max(0, 20 - liveCalendarApts.length))]
+      : generated
+  }, [liveCalendarApts])
+
   const filteredDoctors = useMemo(
     () =>
       selectedSpecialty === "all"
@@ -577,12 +615,12 @@ export function CalendarPage() {
   )
 
   const filteredAppointments = useMemo(() => {
-    return ALL_APPOINTMENTS.filter((a) => {
+    return mergedAppointments.filter((a) => {
       if (selectedSpecialty !== "all" && a.specialty !== selectedSpecialty) return false
       if (selectedDoctor !== "all" && a.doctor !== selectedDoctor) return false
       return true
     })
-  }, [selectedSpecialty, selectedDoctor])
+  }, [mergedAppointments, selectedSpecialty, selectedDoctor])
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
 

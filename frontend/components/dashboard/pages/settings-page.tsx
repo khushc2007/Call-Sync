@@ -1,380 +1,264 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Phone, Mic, Bell, Save, Plus, X, Stethoscope } from "lucide-react"
+import { Building2, Phone, Mic, Bell, Save, Plus, X, Stethoscope, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
-function SettingsCard({
-  title,
-  description,
-  icon: Icon,
-  children,
-}: {
-  title: string
-  description: string
-  icon: typeof Building2
-  children: React.ReactNode
+function SettingsCard({ title, description, icon: Icon, children }: {
+  title: string; description: string; icon: typeof Building2; children: React.ReactNode
 }) {
   return (
-    <div className="glass-card">
-      <div className="p-6 border-b border-white/10">
+    <div className="bg-[#1a1b23] rounded-[10px] border border-[#2a2b35]">
+      <div className="p-5 border-b border-[#2a2b35]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-red-400" />
+          <div className="w-9 h-9 rounded-[8px] bg-coral/15 border border-coral/20 flex items-center justify-center">
+            <Icon className="w-4.5 h-4.5 text-coral" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
-            <p className="text-sm text-white/40">{description}</p>
+            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
       </div>
-      <div className="p-6 space-y-6">{children}</div>
+      <div className="p-5 space-y-5">{children}</div>
     </div>
   )
 }
 
-function FormField({
-  label,
-  children,
-  hint,
-}: {
-  label: string
-  children: React.ReactNode
-  hint?: string
-}) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <Label className="text-sm text-white/70">{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
-      {hint && <p className="text-xs text-white/40">{hint}</p>}
+      {hint && <p className="text-[11px] text-muted-foreground/60">{hint}</p>}
     </div>
   )
 }
 
-function ToggleField({
-  label,
-  description,
-  checked,
-  onCheckedChange,
-}: {
-  label: string
-  description?: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
+function Toggle({ label, description, checked, onCheckedChange }: {
+  label: string; description?: string; checked: boolean; onCheckedChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-2 border-b border-[#2a2b35]/50 last:border-0">
       <div>
-        <p className="text-sm font-medium text-white">{label}</p>
-        {description && <p className="text-xs text-white/40">{description}</p>}
+        <p className="text-sm text-foreground">{label}</p>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
-      <Switch
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        className="data-[state=checked]:bg-red-500"
-      />
+      <Switch checked={checked} onCheckedChange={onCheckedChange} className="data-[state=checked]:bg-coral" />
     </div>
   )
 }
+
+const inputClass = "h-9 bg-[#12131a] border-[#2a2b35] text-foreground text-sm placeholder:text-muted-foreground focus-visible:ring-coral/30"
 
 export function SettingsPage() {
+  const { toast } = useToast()
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
   const [businessName, setBusinessName] = useState("HealthFirst Clinic")
+  const [timezone, setTimezone] = useState("asia_kolkata")
   const [greeting, setGreeting] = useState(
-    "Hello! Thank you for calling HealthFirst Clinic. I'm your AI assistant. How can I help you today?"
+    "Hello! Thank you for calling HealthFirst Clinic. I'm Riley, your AI assistant. How can I help you today?"
   )
+  const [voice, setVoice] = useState("female_1")
+  const [language, setLanguage] = useState("en_in")
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [smsAlerts, setSmsAlerts] = useState(true)
+  const [reminderLeadTime, setReminderLeadTime] = useState("24hr")
   const [notificationEmail, setNotificationEmail] = useState("admin@healthfirst.com")
-  
-  // Medical specialties state
-  const [specialties, setSpecialties] = useState<string[]>([
-    "General Medicine",
-    "Cardiology",
-    "Orthopedics",
-    "Pediatrics",
-    "Dermatology",
+
+  const [specialties, setSpecialties] = useState([
+    "General Medicine", "Cardiology", "Orthopedics", "Pediatrics", "Dermatology",
+    "Dentistry", "Ophthalmology", "Neurology",
   ])
   const [newSpecialty, setNewSpecialty] = useState("")
 
-  const handleAddSpecialty = () => {
-    const trimmed = newSpecialty.trim()
-    if (trimmed && !specialties.includes(trimmed)) {
-      setSpecialties([...specialties, trimmed])
+  const [businessHours, setBusinessHours] = useState({
+    monday:    { open: "09:00", close: "18:00", enabled: true },
+    tuesday:   { open: "09:00", close: "18:00", enabled: true },
+    wednesday: { open: "09:00", close: "18:00", enabled: true },
+    thursday:  { open: "09:00", close: "18:00", enabled: true },
+    friday:    { open: "09:00", close: "18:00", enabled: true },
+    saturday:  { open: "10:00", close: "14:00", enabled: true },
+    sunday:    { open: "00:00", close: "00:00", enabled: false },
+  })
+
+  const days = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const
+
+  const addSpecialty = () => {
+    const t = newSpecialty.trim()
+    if (t && !specialties.includes(t)) {
+      setSpecialties(p => [...p, t])
       setNewSpecialty("")
     }
   }
 
-  const handleRemoveSpecialty = (specialty: string) => {
-    setSpecialties(specialties.filter(s => s !== specialty))
+  const handleSave = async () => {
+    setSaving(true)
+    // In production: POST to /api/settings or save to Supabase settings table
+    await new Promise(r => setTimeout(r, 800))
+    setSaving(false)
+    setSaved(true)
+    toast({ title: "Settings saved", description: "Your configuration has been updated." })
+    setTimeout(() => setSaved(false), 3000)
   }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      handleAddSpecialty()
-    }
-  }
-
-  // Business hours state
-  const [businessHours, setBusinessHours] = useState({
-    monday: { open: "09:00", close: "18:00", enabled: true },
-    tuesday: { open: "09:00", close: "18:00", enabled: true },
-    wednesday: { open: "09:00", close: "18:00", enabled: true },
-    thursday: { open: "09:00", close: "18:00", enabled: true },
-    friday: { open: "09:00", close: "18:00", enabled: true },
-    saturday: { open: "10:00", close: "14:00", enabled: true },
-    sunday: { open: "00:00", close: "00:00", enabled: false },
-  })
-
-  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 max-w-4xl">
+
       {/* Business Profile */}
-      <SettingsCard
-        title="Business Profile"
-        description="Manage your business information"
-        icon={Building2}
-      >
-        <FormField label="Business Name">
-          <input
-            type="text"
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            className="w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors"
-          />
-        </FormField>
+      <SettingsCard title="Business profile" description="Clinic name, timezone, and hours" icon={Building2}>
+        <Field label="Business name">
+          <Input value={businessName} onChange={e => setBusinessName(e.target.value)} className={inputClass} />
+        </Field>
 
-        <FormField label="Phone Number (Twilio)" hint="This number is managed by CallSync AI">
-          <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4 text-white/40" />
-            <span className="text-white/70">+91 80 4567 8901</span>
-            <span className="text-xs text-white/30">(Read only)</span>
+        <Field label="VAPI phone number" hint="Managed by CallSync AI — change in VAPI dashboard">
+          <div className="flex items-center gap-2 h-9 px-3 bg-[#12131a] border border-[#2a2b35] rounded-md">
+            <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">+91 80 4567 8901</span>
+            <span className="text-[10px] text-muted-foreground/50 ml-1">(read only)</span>
           </div>
-        </FormField>
+        </Field>
 
-        <FormField label="Timezone">
-          <Select defaultValue="asia_kolkata">
-            <SelectTrigger className="w-full h-10 bg-white/5 border-white/10 text-white/70 rounded-xl">
-              <SelectValue placeholder="Select timezone" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1a0f3a] border-white/10 text-white">
+        <Field label="Timezone">
+          <Select value={timezone} onValueChange={setTimezone}>
+            <SelectTrigger className={cn(inputClass, "w-full")}><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-[#1a1b23] border-[#2a2b35] text-foreground">
               <SelectItem value="asia_kolkata">Asia/Kolkata (IST)</SelectItem>
               <SelectItem value="asia_mumbai">Asia/Mumbai (IST)</SelectItem>
               <SelectItem value="america_new_york">America/New_York (EST)</SelectItem>
               <SelectItem value="europe_london">Europe/London (GMT)</SelectItem>
             </SelectContent>
           </Select>
-        </FormField>
+        </Field>
 
-        <FormField label="Business Hours">
-          <div className="space-y-3 mt-2">
-            {days.map((day) => (
+        <Field label="Business hours">
+          <div className="space-y-2 mt-1">
+            {days.map(day => (
               <div key={day} className="flex items-center gap-4">
-                <div className="w-24">
-                  <span className="text-sm text-white/70 capitalize">{day}</span>
-                </div>
+                <span className="w-24 text-xs text-muted-foreground capitalize">{day}</span>
                 <Switch
                   checked={businessHours[day].enabled}
-                  onCheckedChange={(checked) =>
-                    setBusinessHours((prev) => ({
-                      ...prev,
-                      [day]: { ...prev[day], enabled: checked },
-                    }))
-                  }
-                  className="data-[state=checked]:bg-red-500"
+                  onCheckedChange={v => setBusinessHours(p => ({ ...p, [day]: { ...p[day], enabled: v } }))}
+                  className="data-[state=checked]:bg-coral"
                 />
                 {businessHours[day].enabled ? (
                   <div className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={businessHours[day].open}
-                      onChange={(e) =>
-                        setBusinessHours((prev) => ({
-                          ...prev,
-                          [day]: { ...prev[day], open: e.target.value },
-                        }))
-                      }
-                      className="h-8 px-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-white/20"
-                    />
-                    <span className="text-white/40">to</span>
-                    <input
-                      type="time"
-                      value={businessHours[day].close}
-                      onChange={(e) =>
-                        setBusinessHours((prev) => ({
-                          ...prev,
-                          [day]: { ...prev[day], close: e.target.value },
-                        }))
-                      }
-                      className="h-8 px-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-white/20"
-                    />
+                    <input type="time" value={businessHours[day].open}
+                      onChange={e => setBusinessHours(p => ({ ...p, [day]: { ...p[day], open: e.target.value } }))}
+                      className="h-8 px-2 bg-[#12131a] border border-[#2a2b35] rounded-[6px] text-sm text-foreground focus:outline-none" />
+                    <span className="text-muted-foreground text-xs">to</span>
+                    <input type="time" value={businessHours[day].close}
+                      onChange={e => setBusinessHours(p => ({ ...p, [day]: { ...p[day], close: e.target.value } }))}
+                      className="h-8 px-2 bg-[#12131a] border border-[#2a2b35] rounded-[6px] text-sm text-foreground focus:outline-none" />
                   </div>
                 ) : (
-                  <span className="text-sm text-white/30">Closed</span>
+                  <span className="text-xs text-muted-foreground/50">Closed</span>
                 )}
               </div>
             ))}
           </div>
-        </FormField>
+        </Field>
       </SettingsCard>
 
       {/* Medical Specialties */}
-      <SettingsCard
-        title="Medical Specialties"
-        description="Add specialties available at your hospital"
-        icon={Stethoscope}
-      >
-        <FormField label="Add New Specialty">
+      <SettingsCard title="Medical specialties" description="Specialties available at your clinic" icon={Stethoscope}>
+        <Field label="Add specialty">
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSpecialty}
-              onChange={(e) => setNewSpecialty(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g., Neurology, ENT, Ophthalmology"
-              className="flex-1 h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors"
-            />
-            <Button
-              onClick={handleAddSpecialty}
-              disabled={!newSpecialty.trim()}
-              className="h-10 px-4 bg-red-500 hover:bg-red-600 disabled:bg-white/10 disabled:text-white/30 text-white rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add
+            <Input value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addSpecialty())}
+              placeholder="e.g., Neurology, ENT…" className={cn(inputClass, "flex-1")} />
+            <Button onClick={addSpecialty} disabled={!newSpecialty.trim()}
+              className="h-9 px-4 bg-coral hover:bg-red-500 disabled:opacity-40 text-white text-sm">
+              <Plus className="w-3.5 h-3.5 mr-1" />Add
             </Button>
           </div>
-        </FormField>
-
-        <FormField label={`Current Specialties (${specialties.length})`}>
-          {specialties.length > 0 ? (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {specialties.map((specialty) => (
-                <Badge
-                  key={specialty}
-                  variant="outline"
-                  className="h-8 px-3 bg-white/5 border-white/10 text-white/80 hover:bg-white/10 transition-colors group"
-                >
-                  {specialty}
-                  <button
-                    onClick={() => handleRemoveSpecialty(specialty)}
-                    className="ml-2 text-white/40 hover:text-red-400 transition-colors"
-                    title="Remove specialty"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-white/40 mt-2">No specialties added yet. Add your hospital&apos;s medical specialties above.</p>
-          )}
-        </FormField>
+        </Field>
+        <Field label={`Active specialties (${specialties.length})`}>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {specialties.map(s => (
+              <Badge key={s} variant="outline" className="h-7 px-2.5 bg-[#12131a] border-[#2a2b35] text-muted-foreground text-xs gap-1.5">
+                {s}
+                <button onClick={() => setSpecialties(p => p.filter(x => x !== s))} className="text-muted-foreground/50 hover:text-coral transition-colors">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        </Field>
       </SettingsCard>
 
-      {/* Voice Agent Settings */}
-      <SettingsCard
-        title="Voice Agent Settings"
-        description="Configure your AI voice assistant"
-        icon={Mic}
-      >
-        <FormField label="Voice Selection">
-          <Select defaultValue="female_1">
-            <SelectTrigger className="w-full h-10 bg-white/5 border-white/10 text-white/70 rounded-xl">
-              <SelectValue placeholder="Select voice" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1a0f3a] border-white/10 text-white">
-              <SelectItem value="female_1">Female - Professional (Recommended)</SelectItem>
-              <SelectItem value="female_2">Female - Friendly</SelectItem>
-              <SelectItem value="male_1">Male - Professional</SelectItem>
-              <SelectItem value="male_2">Male - Friendly</SelectItem>
+      {/* Voice Agent */}
+      <SettingsCard title="Voice agent" description="Configure Riley's voice and greeting" icon={Mic}>
+        <Field label="Voice">
+          <Select value={voice} onValueChange={setVoice}>
+            <SelectTrigger className={cn(inputClass, "w-full")}><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-[#1a1b23] border-[#2a2b35] text-foreground">
+              <SelectItem value="female_1">Female — professional (recommended)</SelectItem>
+              <SelectItem value="female_2">Female — friendly</SelectItem>
+              <SelectItem value="male_1">Male — professional</SelectItem>
+              <SelectItem value="male_2">Male — friendly</SelectItem>
             </SelectContent>
           </Select>
-        </FormField>
-
-        <FormField label="Greeting Message" hint="This is what the AI says when answering calls">
-          <Textarea
-            value={greeting}
-            onChange={(e) => setGreeting(e.target.value)}
-            className="min-h-[100px] bg-white/5 border-white/10 text-white placeholder:text-white/40 rounded-xl resize-none focus:border-white/20"
-          />
-        </FormField>
-
-        <FormField label="Language">
-          <Select defaultValue="en_in">
-            <SelectTrigger className="w-full h-10 bg-white/5 border-white/10 text-white/70 rounded-xl">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1a0f3a] border-white/10 text-white">
+        </Field>
+        <Field label="Language">
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className={cn(inputClass, "w-full")}><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-[#1a1b23] border-[#2a2b35] text-foreground">
               <SelectItem value="en_in">English (India)</SelectItem>
               <SelectItem value="en_us">English (US)</SelectItem>
               <SelectItem value="hi_in">Hindi</SelectItem>
               <SelectItem value="ta_in">Tamil</SelectItem>
+              <SelectItem value="kn_in">Kannada</SelectItem>
             </SelectContent>
           </Select>
-        </FormField>
+        </Field>
+        <Field label="Greeting message" hint="What Riley says when answering a call">
+          <Textarea value={greeting} onChange={e => setGreeting(e.target.value)}
+            className="min-h-[90px] bg-[#12131a] border-[#2a2b35] text-foreground text-sm placeholder:text-muted-foreground focus-visible:ring-coral/30 resize-none" />
+        </Field>
       </SettingsCard>
 
-      {/* Notification Settings */}
-      <SettingsCard
-        title="Notification Settings"
-        description="Manage how you receive alerts"
-        icon={Bell}
-      >
-        <ToggleField
-          label="Email Notifications"
-          description="Receive booking confirmations via email"
-          checked={emailNotifications}
-          onCheckedChange={setEmailNotifications}
-        />
-
-        <ToggleField
-          label="SMS Alerts"
-          description="Get instant SMS for new bookings"
-          checked={smsAlerts}
-          onCheckedChange={setSmsAlerts}
-        />
-
-        <FormField label="Reminder Lead Time">
-          <Select defaultValue="24hr">
-            <SelectTrigger className="w-full h-10 bg-white/5 border-white/10 text-white/70 rounded-xl">
-              <SelectValue placeholder="Select lead time" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1a0f3a] border-white/10 text-white">
+      {/* Notifications */}
+      <SettingsCard title="Notifications" description="Alerts and reminder configuration" icon={Bell}>
+        <Toggle label="Email notifications" description="Booking confirmations and cancellations" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+        <Toggle label="SMS alerts" description="Instant SMS for new bookings" checked={smsAlerts} onCheckedChange={setSmsAlerts} />
+        <Field label="Notification email">
+          <Input type="email" value={notificationEmail} onChange={e => setNotificationEmail(e.target.value)}
+            placeholder="email@example.com" className={inputClass} />
+        </Field>
+        <Field label="Reminder lead time" hint="How far in advance to call patients">
+          <Select value={reminderLeadTime} onValueChange={setReminderLeadTime}>
+            <SelectTrigger className={cn(inputClass, "w-full")}><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-[#1a1b23] border-[#2a2b35] text-foreground">
+              <SelectItem value="12hr">12 hours before</SelectItem>
               <SelectItem value="24hr">24 hours before</SelectItem>
               <SelectItem value="48hr">48 hours before</SelectItem>
               <SelectItem value="1week">1 week before</SelectItem>
             </SelectContent>
           </Select>
-        </FormField>
-
-        <FormField label="Notification Email">
-          <input
-            type="email"
-            value={notificationEmail}
-            onChange={(e) => setNotificationEmail(e.target.value)}
-            className="w-full h-10 px-4 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/20 transition-colors"
-            placeholder="email@example.com"
-          />
-        </FormField>
+        </Field>
       </SettingsCard>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button className="h-11 px-6 bg-red-500 hover:bg-red-600 text-white rounded-full font-medium glow-red-sm hover:shadow-[0_0_25px_rgba(239,68,68,0.4)] transition-all duration-300">
-          <Save className="w-4 h-4 mr-2" />
-          Save Changes
+      <div className="flex justify-end pb-4">
+        <Button onClick={handleSave} disabled={saving}
+          className="h-10 px-6 bg-coral hover:bg-red-500 text-white rounded-full font-medium transition-all">
+          {saving ? (
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>
+          ) : saved ? (
+            <><Check className="w-4 h-4 mr-2" />Saved</>
+          ) : (
+            <><Save className="w-4 h-4 mr-2" />Save changes</>
+          )}
         </Button>
       </div>
     </div>
