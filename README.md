@@ -587,5 +587,5 @@ Alt channel   Dialogflow ES · Google Cloud Functions
 
 ## Team
 
-**Khush Chadha** — Frontend & Voice  
+**Khush Chadha** 
 
