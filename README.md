@@ -402,6 +402,4 @@ The reminder assistant uses GPT-4 with a minimal system prompt and ends the call
 ---
 
 ## Team
-ERROR-404
-KHUSH,SATVICK,RAJAT,SHRIYA
-Built at HACK'A'WAR GenAI x AWS Hackathon, RIT Bengaluru.
+Developed and produced by Khush Chadha
