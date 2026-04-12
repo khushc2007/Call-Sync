@@ -589,4 +589,4 @@ Alt channel   Dialogflow ES · Google Cloud Functions
 ## Team
 
 **Khush Chadha** — Frontend & Voice  
-Hack'a'War GenAI × AWS Hackathon, RIT Bengaluru
+
