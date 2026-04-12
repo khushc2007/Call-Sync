@@ -2,9 +2,6 @@
 
 A voice-based appointment management system built for the HACK'A'WAR GenAI x AWS Hackathon at RIT Bengaluru. CallSync lets callers book, reschedule, and cancel appointments entirely over a phone call. The system uses a VAPI voice agent backed by GPT-4, a Node.js/Express API deployed on Render, Google Calendar for slot management, Supabase for persistence, and a Next.js dashboard for monitoring.
 
-ERROR-404
-KHUSH,SATVICK,RAJAT,SHRIYA
-
 ## Repository Structure
 
 ```
