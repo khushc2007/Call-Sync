@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -12,5 +13,6 @@
     "googleapis": "^126.0.0",
     "@supabase/supabase-js": "^2.39.0",
     "node-cron": "^3.0.0"
-  }
+  },
+  "description": "CallSync AI backend \u2014 voice appointment booking via VAPI + Google Calendar + Supabase"
 }

@@ -11,15 +11,35 @@ async function saveAppointment(data) {
   if (error) throw error;
 }
 
-async function getAppointmentByName(name) {
+// Changed from name-based to phone-based lookup — avoids name collision bugs
+async function getAppointmentByPhone(phone) {
+  const cleaned = phone.replace(/[\s\-().]/g, '');
   const { data, error } = await supabase
     .from('appointments')
     .select('*')
-    .ilike('name', `%${name}%`)
+    .or(`phone.eq.${phone},phone.eq.${cleaned}`)
     .order('created_at', { ascending: false })
     .limit(1);
   if (error) throw error;
-  return data[0];
+  return data[0] || null;
+}
+
+async function getAppointmentById(id) {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteAppointmentById(id) {
+  const { error } = await supabase
+    .from('appointments')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
 }
 
 async function getUnremindedAppointments() {
@@ -43,18 +63,38 @@ async function markReminded(id) {
   if (error) throw error;
 }
 
-async function deleteAppointmentByName(name) {
-  const { error } = await supabase
+// For dashboard REST API
+async function getAllAppointments({ status, date, limit = 100, offset = 0 } = {}) {
+  let query = supabase
     .from('appointments')
-    .delete()
-    .ilike('name', `%${name}%`);
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (status) query = query.eq('status', status);
+  if (date) query = query.eq('date', date);
+  const { data, error } = await query;
   if (error) throw error;
+  return data;
+}
+
+async function updateAppointmentStatus(id, status) {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ status })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 module.exports = {
   saveAppointment,
-  getAppointmentByName,
+  getAppointmentByPhone,
+  getAppointmentById,
+  deleteAppointmentById,
   getUnremindedAppointments,
   markReminded,
-  deleteAppointmentByName
+  getAllAppointments,
+  updateAppointmentStatus,
 };
